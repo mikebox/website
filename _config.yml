@@ -20,7 +20,7 @@
 
 title: Jayakanth Rajan
 description: >- # this means to ignore newlines until "baseurl:"
-  © 2024 Jayakanth. All rights reserved.
+  © 2024 Jayakanth. All rights reserved. 
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://jayakanth.com" # the base hostname & protocol for your site, e.g. http://example.com
 
