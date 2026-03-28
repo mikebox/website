@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capsim Pre-Simulator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="app-background"></div>
+    <div class="app-container">
+
+        <!-- SIDEBAR CONTROLS -->
+        <aside class="controls-panel glass-panel">
+            <div class="header">
+                <h1><i class="fa-solid fa-chart-pie"></i>Capsim Pre-Simulator</h1>
+                <p>By Jayakanth Rajan</p>
+            </div>
+
+            <!-- Global Config -->
+            <div class="global-config">
+                <div class="input-group">
+                    <label>Start Date</label>
+                    <input type="month" id="start-date" value="2024-01" class="full-width"
+                        style="padding: 10px; border-radius: 8px; margin-bottom: 8px;">
+                    <div class="btn-group" style="padding-top: 4px;">
+                        <button class="btn btn-outline" id="btn-export"><i class="fa-solid fa-download"></i>
+                            Save</button>
+                        <button class="btn btn-outline" id="btn-import"><i class="fa-solid fa-upload"></i> Load</button>
+                        <input type="file" id="file-import" accept=".json,.txt" style="display:none">
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Dynamic Segment Configs -->
+            <div class="configs-container" id="configs-container">
+                <!-- Javascript will inject collapsible config forms here -->
+            </div>
+
+            <!-- Time Controls -->
+            <div class="round-controls glass-card">
+                <div class="round-display">
+                    <span class="label">Time</span>
+                    <div>
+                        <span class="value" id="disp-rnd">Round 0</span>
+                        <span class="month-label" id="disp-mo"></span>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-outline" id="btn-prev" disabled><i class="fa-solid fa-backward"></i>
+                        Yr</button>
+                    <button class="btn btn-primary" id="btn-next">Yr <i class="fa-solid fa-forward"></i></button>
+                    <button class="btn btn-outline" id="btn-play" title="Play Monthly"><i
+                            class="fa-solid fa-play"></i></button>
+                </div>
+                <input type="range" id="time-slider" min="0" max="96" value="0" class="styled-slider">
+            </div>
+
+            <div class="legend glass-card">
+                <h3>Legend</h3>
+                <div class="legend-grid">
+                    <div class="legend-item"><span class="color-dot outline"></span><span class="label">Rough Cut
+                            (R=4.0)</span></div>
+                    <div class="legend-item"><span class="color-dot filled"></span><span class="label">Fine Cut
+                            (R=2.5)</span></div>
+                    <div class="legend-item"><span class="color-dot ideal"></span><span class="label">Ideal Point &
+                            Trajectory</span></div>
+                    <div class="legend-item"><span class="color-shape product"></span><span class="label">My Product
+                            (Static)</span></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN MAP AREA -->
+        <main class="map-area">
+            <!-- Tabs Navigation -->
+            <nav class="tabs-nav" id="tabs-nav">
+                <button class="tab-btn active" data-tab="summary">Summary</button>
+                <button class="tab-btn" data-tab="products">Products</button>
+                <button class="tab-btn" data-tab="segments">Segments</button>
+                <button class="tab-btn" data-tab="traditional">Traditional</button>
+                <button class="tab-btn" data-tab="lowEnd">Low End</button>
+                <button class="tab-btn" data-tab="highEnd">High End</button>
+                <button class="tab-btn" data-tab="performance">Performance</button>
+                <button class="tab-btn" data-tab="size">Size</button>
+            </nav>
+
+            <div class="map-wrapper glass-panel">
+                <div class="map-header">
+                    <h2 id="map-title">All Segments <span class="badge" id="map-time-badge">Year 0</span></h2>
+                </div>
+                <div class="svg-container" id="svg-container">
+                    <!-- SVG map generated by JS -->
+                </div>
+                <!-- Products Config Editor (Full Screen) -->
+                <div class="products-container" id="products-container" style="display: none;">
+                    <!-- JS will inject product & revision editors here -->
+                </div>
+                <!-- Segments Config Editor (Full Screen) -->
+                <div class="segments-container" id="segments-container" style="display: none;">
+                    <!-- JS will inject buying criteria editors here -->
+                </div>
+            </div>
+        </main>
+
+        <div class="tooltip" id="tooltip"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
