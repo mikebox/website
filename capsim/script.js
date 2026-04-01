@@ -12,17 +12,18 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeTab = 'summary';
 
     const segments = {
-        traditional: { name: "Traditional", initX: 5.0, initY: 15.0, driftX: 0.7, driftY: -0.7, offsetX: 0.0, offsetY: 0.0, colorClass: "trad-color", colorHex: "#2563eb", criteria: { idealAge: 2.0, priceMin: 20.0, priceMax: 30.0, mtbfMin: 14000, mtbfMax: 19000, wp: 21, wa: 47, wpr: 23, wm: 9 } },
-        lowEnd: { name: "Low End", initX: 2.5, initY: 17.5, driftX: 0.5, driftY: -0.5, offsetX: -0.8, offsetY: 0.8, colorClass: "low-color", colorHex: "#8b5cf6", criteria: { idealAge: 7.0, priceMin: 15.0, priceMax: 25.0, mtbfMin: 12000, mtbfMax: 17000, wp: 16, wa: 24, wpr: 53, wm: 7 } },
-        highEnd: { name: "High End", initX: 7.5, initY: 12.5, driftX: 0.9, driftY: -0.9, offsetX: 1.4, offsetY: -1.4, colorClass: "high-color", colorHex: "#ec4899", criteria: { idealAge: 0.0, priceMin: 30.0, priceMax: 40.0, mtbfMin: 23000, mtbfMax: 28000, wp: 43, wa: 29, wpr: 9, wm: 19 } },
-        performance: { name: "Performance", initX: 8.0, initY: 17.0, driftX: 1.0, driftY: -0.2, offsetX: 1.4, offsetY: -0.2, colorClass: "perf-color", colorHex: "#f59e0b", criteria: { idealAge: 1.0, priceMin: 25.0, priceMax: 35.0, mtbfMin: 22000, mtbfMax: 27000, wp: 29, wa: 9, wpr: 19, wm: 43 } },
-        size: { name: "Size", initX: 3.0, initY: 12.0, driftX: 0.4, driftY: -1.0, offsetX: 0.4, offsetY: -1.0, colorClass: "size-color", colorHex: "#10b981", criteria: { idealAge: 1.5, priceMin: 25.0, priceMax: 35.0, mtbfMin: 16000, mtbfMax: 21000, wp: 43, wa: 29, wpr: 9, wm: 19 } }
+        traditional: { name: "Traditional", initX: 5.0, initY: 15.0, driftX: 0.7, driftY: -0.7, offsetX: 0.0, offsetY: 0.0, baseDemand: 7387, growthRate: 9.2, colorClass: "trad-color", colorHex: "#2563eb", estimatedShare: Array(9).fill(16.0), criteria: { idealAge: 2.0, priceMin: 20.0, priceMax: 30.0, mtbfMin: 14000, mtbfMax: 19000, wp: 21, wa: 47, wpr: 23, wm: 9 } },
+        lowEnd: { name: "Low End", initX: 2.5, initY: 17.5, driftX: 0.5, driftY: -0.5, offsetX: -0.8, offsetY: 0.8, baseDemand: 8975, growthRate: 11.7, colorClass: "low-color", colorHex: "#8b5cf6", estimatedShare: Array(9).fill(16.0), criteria: { idealAge: 7.0, priceMin: 15.0, priceMax: 25.0, mtbfMin: 12000, mtbfMax: 17000, wp: 16, wa: 24, wpr: 53, wm: 7 } },
+        highEnd: { name: "High End", initX: 7.5, initY: 12.5, driftX: 0.9, driftY: -0.9, offsetX: 1.4, offsetY: -1.4, baseDemand: 2554, growthRate: 16.2, colorClass: "high-color", colorHex: "#ec4899", estimatedShare: Array(9).fill(16.0), criteria: { idealAge: 0.0, priceMin: 30.0, priceMax: 40.0, mtbfMin: 23000, mtbfMax: 28000, wp: 43, wa: 29, wpr: 9, wm: 19 } },
+        performance: { name: "Performance", initX: 8.0, initY: 17.0, driftX: 1.0, driftY: -0.2, offsetX: 1.4, offsetY: -0.2, baseDemand: 1915, growthRate: 19.8, colorClass: "perf-color", colorHex: "#f59e0b", estimatedShare: Array(9).fill(16.0), criteria: { idealAge: 1.0, priceMin: 25.0, priceMax: 35.0, mtbfMin: 22000, mtbfMax: 27000, wp: 29, wa: 9, wpr: 19, wm: 43 } },
+        size: { name: "Size", initX: 3.0, initY: 12.0, driftX: 0.4, driftY: -1.0, offsetX: 0.4, offsetY: -1.0, baseDemand: 1984, growthRate: 18.3, colorClass: "size-color", colorHex: "#10b981", estimatedShare: Array(9).fill(16.0), criteria: { idealAge: 1.5, priceMin: 25.0, priceMax: 35.0, mtbfMin: 16000, mtbfMax: 21000, wp: 43, wa: 29, wpr: 9, wm: 19 } }
     };
     
     // UI Elements
     const startDateInput = document.getElementById('start-date');
     const productsContainer = document.getElementById('products-container');
     const segmentsContainer = document.getElementById('segments-container');
+    const demandContainer = document.getElementById('demand-container');
     const configsContainer = document.getElementById('configs-container');
     const tabNavs = document.querySelectorAll('.tab-btn');
     const mapTitle = document.getElementById('map-title');
@@ -76,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tabNavs.forEach(b => b.classList.remove('active'));
                 e.target.classList.add('active');
                 activeTab = e.target.getAttribute('data-tab');
+                if (tooltip) tooltip.style.opacity = '0'; // Hide ghost tooltips when switching tabs
                 updateTabState();
             });
         });
@@ -173,12 +175,14 @@ document.addEventListener('DOMContentLoaded', () => {
             configsContainer.style.display = 'none';
             document.getElementById('svg-container').style.display = 'none';
             segmentsContainer.style.display = 'none';
+            if (demandContainer) demandContainer.style.display = 'none';
             productsContainer.style.display = 'grid'; 
         } else if (activeTab === 'segments') {
             mapTitle.innerHTML = `Segments Buying Criteria <span class="badge" id="map-time-badge"></span>`;
             configsContainer.style.display = 'flex';
             document.getElementById('svg-container').style.display = 'none';
             productsContainer.style.display = 'none';
+            if (demandContainer) demandContainer.style.display = 'none';
             segmentsContainer.style.display = 'grid';
             
             allConfigs.forEach(conf => {
@@ -187,12 +191,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 conf.querySelector('.caret').style.display = 'block';
                 conf.querySelector('.caret').className = 'fa-solid fa-chevron-down caret';
             });
+        } else if (activeTab === 'demand') {
+            mapTitle.innerHTML = `Industry Demand Forecast <span class="badge" id="map-time-badge"></span>`;
+            configsContainer.style.display = 'none';
+            document.getElementById('svg-container').style.display = 'none';
+            productsContainer.style.display = 'none';
+            segmentsContainer.style.display = 'none';
+            if (demandContainer) {
+                demandContainer.style.display = 'block';
+                renderDemandUI();
+            }
         } else if (activeTab === 'summary') {
             mapTitle.innerHTML = `All Segments <span class="badge" id="map-time-badge"></span>`;
             configsContainer.style.display = 'flex';
             document.getElementById('svg-container').style.display = 'flex';
             productsContainer.style.display = 'none';
             segmentsContainer.style.display = 'none';
+            if (demandContainer) demandContainer.style.display = 'none';
             allConfigs.forEach(conf => {
                 conf.style.display = 'block';
                 conf.classList.remove('expanded');
@@ -205,6 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('svg-container').style.display = 'flex';
             productsContainer.style.display = 'none';
             segmentsContainer.style.display = 'none';
+            if (demandContainer) demandContainer.style.display = 'none';
             allConfigs.forEach(conf => {
                 if (conf.id === `config-${activeTab}`) {
                     conf.style.display = 'block';
@@ -322,6 +338,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="segment-criteria-header"><span class="color-ind" style="background:${seg.colorHex}; width:12px; height:12px; border-radius:50%;"></span> ${seg.name} Buying Criteria</div>
                 
                 <div class="input-group">
+                    <label>Industry Demand (Year 0)</label>
+                    <div class="row">
+                        <div class="input-wrapper"><span>Base</span><input type="number" step="1" id="bdem-${segId}" value="${seg.baseDemand || 0}"></div>
+                        <div class="input-wrapper"><span>Grow %</span><input type="number" step="0.1" id="grt-${segId}" value="${seg.growthRate || 0}"></div>
+                    </div>
+                </div>
+
+                <div class="input-group">
                     <label>Weights (%)</label>
                     <div class="row">
                         <div class="input-wrapper"><span>P/S</span><input type="number" id="wp-${segId}" value="${c.wp}"></div>
@@ -362,6 +386,82 @@ document.addEventListener('DOMContentLoaded', () => {
             bindC("wp", "wp"); bindC("wa", "wa"); bindC("wpr", "wpr"); bindC("wm", "wm");
             bindC("idealAge", "iage"); bindC("priceMin", "pmin"); bindC("priceMax", "pmax");
             bindC("mtbfMin", "mmin"); bindC("mtbfMax", "mmax");
+            
+            const bindSeg = (key, idStr) => {
+                const el = document.getElementById(`${idStr}-${segId}`);
+                if (el) el.oninput = e => { seg[key] = parseFloat(e.target.value)||0; updateProductsSVG(); if (activeTab === 'demand') renderDemandUI(); };
+            };
+            bindSeg("baseDemand", "bdem"); bindSeg("growthRate", "grt");
+        });
+    }
+
+    function renderDemandUI() {
+        if (!demandContainer) return;
+        let html = `<div class="glass-card" style="padding: 24px; max-width: 1100px; margin: 0 auto; background: white; border: 1px solid var(--panel-border);">
+            <h3 style="margin-bottom: 20px; font-weight: 700; color: var(--text-primary); font-size: 1.2rem;">8-Year Market Share & Demand Matrix</h3>
+            <div style="overflow-x: auto; border: 1px solid rgba(0,0,0,0.05); border-radius: 8px;">
+            <table style="width: 100%; border-collapse: collapse; text-align: right; background: white; font-size: 0.85rem;">
+                <thead style="background: rgba(0,0,0,0.02);">
+                    <tr>
+                        <th style="padding: 10px 12px; text-align: left; border-bottom: 2px solid var(--panel-border); font-weight: 600; color: var(--text-secondary); width: 140px;">Segment Data</th>`;
+        
+        for (let i = 0; i <= 8; i++) html += `<th style="padding: 10px 12px; border-bottom: 2px solid var(--panel-border); font-weight: 600; color: var(--text-secondary); min-width: 80px;">Year ${i}</th>`;
+        html += `<th style="padding: 10px 12px; border-bottom: 2px solid var(--panel-border); font-weight: 700; color: var(--text-primary); min-width: 90px; background: rgba(0,0,0,0.02);">Total</th>`;
+        html += `</tr></thead><tbody>`;
+        
+        Object.keys(segments).forEach(segId => {
+            const seg = segments[segId];
+            if (!seg.estimatedShare) seg.estimatedShare = Array(9).fill(16.0); // Safe fallback
+            
+            // Sub-header row
+            html += `<tr style="background: ${seg.colorHex}10;">
+                <td colspan="11" style="padding: 8px 12px; text-align: left; font-weight: 700; color: ${seg.colorHex}; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    ${seg.name} <span style="font-weight: 500; font-size: 0.75rem;">(+${seg.growthRate}%/yr)</span>
+                </td>
+            </tr>`;
+            
+            // Row 1: Industry Size
+            html += `<tr><td style="padding: 8px 12px; text-align: left; color: var(--text-secondary);">Total Industry</td>`;
+            let indDemands = [];
+            let segmentTotalDemand = 0;
+            for (let i = 0; i <= 8; i++) {
+                const dem = Math.round((seg.baseDemand || 0) * Math.pow(1 + (seg.growthRate || 0)/100, i));
+                indDemands.push(dem);
+                segmentTotalDemand += dem;
+                html += `<td style="padding: 8px 12px; border-bottom: 1px dashed rgba(0,0,0,0.05);">${dem.toLocaleString()}</td>`;
+            }
+            html += `<td style="padding: 8px 12px; border-bottom: 1px dashed rgba(0,0,0,0.05); font-weight: 700; color: ${seg.colorHex}; background: rgba(0,0,0,0.02);">${segmentTotalDemand.toLocaleString()}</td></tr>`;
+            
+            // Row 2: Est Share %
+            html += `<tr><td style="padding: 8px 12px; text-align: left; color: var(--text-secondary);">Est. Share (%)</td>`;
+            for (let i = 0; i <= 8; i++) {
+                html += `<td style="padding: 4px 8px; border-bottom: 1px dashed rgba(0,0,0,0.05);">
+                            <input type="number" step="0.1" class="share-input" data-seg="${segId}" data-yr="${i}" value="${seg.estimatedShare[i]}" style="width: 100%; text-align: right; padding: 4px; border: 1px solid var(--input-border); border-radius: 4px; background: #f8fafc; font-family: monospace;">
+                        </td>`;
+            }
+            html += `<td style="padding: 8px 12px; border-bottom: 1px dashed rgba(0,0,0,0.05); background: rgba(0,0,0,0.02);"></td></tr>`;
+            
+            // Row 3: My Unit Demand
+            html += `<tr><td style="padding: 8px 12px; text-align: left; font-weight: 600; color: var(--text-primary); border-bottom: 2px solid rgba(0,0,0,0.1);">My Unit Demand</td>`;
+            let mySegmentTotal = 0;
+            for (let i = 0; i <= 8; i++) {
+                const myDem = Math.round(indDemands[i] * (seg.estimatedShare[i] / 100));
+                mySegmentTotal += myDem;
+                html += `<td style="padding: 8px 12px; font-weight: 700; color: var(--accent-blue); border-bottom: 2px solid rgba(0,0,0,0.1);">${myDem.toLocaleString()}</td>`;
+            }
+            html += `<td style="padding: 8px 12px; font-weight: 800; color: var(--accent-blue); border-bottom: 2px solid rgba(0,0,0,0.1); background: rgba(0,0,0,0.02);">${mySegmentTotal.toLocaleString()}</td></tr>`;
+        });
+        
+        html += `</tbody></table></div></div>`;
+        demandContainer.innerHTML = html;
+        
+        demandContainer.querySelectorAll('.share-input').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const sid = e.target.getAttribute('data-seg');
+                const yr = parseInt(e.target.getAttribute('data-yr'));
+                segments[sid].estimatedShare[yr] = parseFloat(e.target.value) || 0;
+                renderDemandUI(); 
+            });
         });
     }
 
@@ -406,12 +506,16 @@ document.addEventListener('DOMContentLoaded', () => {
             // Tooltips for center and ideal points
             cDot.addEventListener("mousemove", (e) => {
                 const {cx, cy} = getCalculatedCoords(segId, currentMonth);
-                showTooltip(e, `<b>${segments[segId].name} Center</b><br/><span class="coord-label">P:</span><span class="coord-value">${cx.toFixed(2)}</span> <span class="coord-label">S:</span><span class="coord-value">${cy.toFixed(2)}</span>`);
+                const year = Math.floor(currentMonth / 12);
+                const demand = Math.round((segments[segId].baseDemand || 0) * Math.pow(1 + (segments[segId].growthRate || 0)/100, year));
+                showTooltip(e, `<b>${segments[segId].name} Center</b><br/><span class="coord-label">P:</span><span class="coord-value">${cx.toFixed(2)}</span> <span class="coord-label">S:</span><span class="coord-value">${cy.toFixed(2)}</span><br/><span class="coord-label">Yr ${year} Dmd:</span><span class="coord-value" style="color:#10b981;">${demand.toLocaleString()}</span>`);
             });
             cDot.addEventListener("mouseleave", hideTooltip);
             iDot.addEventListener("mousemove", (e) => {
                 const {ix, iy} = getCalculatedCoords(segId, currentMonth);
-                showTooltip(e, `<b>${segments[segId].name} Ideal</b><br/><span class="coord-label">P:</span><span class="coord-value">${ix.toFixed(2)}</span> <span class="coord-label">S:</span><span class="coord-value">${iy.toFixed(2)}</span>`);
+                const year = Math.floor(currentMonth / 12);
+                const demand = Math.round((segments[segId].baseDemand || 0) * Math.pow(1 + (segments[segId].growthRate || 0)/100, year));
+                showTooltip(e, `<b>${segments[segId].name} Ideal</b><br/><span class="coord-label">P:</span><span class="coord-value">${ix.toFixed(2)}</span> <span class="coord-label">S:</span><span class="coord-value">${iy.toFixed(2)}</span><br/><span class="coord-label">Yr ${year} Dmd:</span><span class="coord-value" style="color:#10b981;">${demand.toLocaleString()}</span>`);
             });
             iDot.addEventListener("mouseleave", hideTooltip);
         });
@@ -724,7 +828,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     Object.keys(data.segments).forEach(k => {
                         if (segments[k]) {
-                            segments[k] = data.segments[k];
+                            // Merge strategically to guarantee backwards compatibility with older save files that lack demand fields
+                            segments[k] = { ...segments[k], ...data.segments[k] };
                         }
                     });
                     
