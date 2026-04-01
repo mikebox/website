@@ -12,11 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeTab = 'summary';
 
     const segments = {
-        traditional: { name: "Traditional", initX: 5.0, initY: 15.0, driftX: 0.7, driftY: -0.7, offsetX: 0.0, offsetY: 0.0, baseDemand: 7387, growthRate: 9.2, colorClass: "trad-color", colorHex: "#2563eb", estimatedShare: Array(9).fill(16.0), criteria: { idealAge: 2.0, priceMin: 20.0, priceMax: 30.0, mtbfMin: 14000, mtbfMax: 19000, wp: 21, wa: 47, wpr: 23, wm: 9 } },
-        lowEnd: { name: "Low End", initX: 2.5, initY: 17.5, driftX: 0.5, driftY: -0.5, offsetX: -0.8, offsetY: 0.8, baseDemand: 8975, growthRate: 11.7, colorClass: "low-color", colorHex: "#8b5cf6", estimatedShare: Array(9).fill(16.0), criteria: { idealAge: 7.0, priceMin: 15.0, priceMax: 25.0, mtbfMin: 12000, mtbfMax: 17000, wp: 16, wa: 24, wpr: 53, wm: 7 } },
-        highEnd: { name: "High End", initX: 7.5, initY: 12.5, driftX: 0.9, driftY: -0.9, offsetX: 1.4, offsetY: -1.4, baseDemand: 2554, growthRate: 16.2, colorClass: "high-color", colorHex: "#ec4899", estimatedShare: Array(9).fill(16.0), criteria: { idealAge: 0.0, priceMin: 30.0, priceMax: 40.0, mtbfMin: 23000, mtbfMax: 28000, wp: 43, wa: 29, wpr: 9, wm: 19 } },
-        performance: { name: "Performance", initX: 8.0, initY: 17.0, driftX: 1.0, driftY: -0.2, offsetX: 1.4, offsetY: -0.2, baseDemand: 1915, growthRate: 19.8, colorClass: "perf-color", colorHex: "#f59e0b", estimatedShare: Array(9).fill(16.0), criteria: { idealAge: 1.0, priceMin: 25.0, priceMax: 35.0, mtbfMin: 22000, mtbfMax: 27000, wp: 29, wa: 9, wpr: 19, wm: 43 } },
-        size: { name: "Size", initX: 3.0, initY: 12.0, driftX: 0.4, driftY: -1.0, offsetX: 0.4, offsetY: -1.0, baseDemand: 1984, growthRate: 18.3, colorClass: "size-color", colorHex: "#10b981", estimatedShare: Array(9).fill(16.0), criteria: { idealAge: 1.5, priceMin: 25.0, priceMax: 35.0, mtbfMin: 16000, mtbfMax: 21000, wp: 43, wa: 29, wpr: 9, wm: 19 } }
+        traditional: { name: "Traditional", initX: 5.0, initY: 15.0, driftX: 0.7, driftY: -0.7, offsetX: 0.0, offsetY: 0.0, baseDemand: 7387, growthRates: Array(9).fill(9.2), colorClass: "trad-color", colorHex: "#2563eb", estimatedShare: Array(9).fill(16.0), criteria: { idealAge: 2.0, priceMin: 20.0, priceMax: 30.0, mtbfMin: 14000, mtbfMax: 19000, wp: 21, wa: 47, wpr: 23, wm: 9 } },
+        lowEnd: { name: "Low End", initX: 2.5, initY: 17.5, driftX: 0.5, driftY: -0.5, offsetX: -0.8, offsetY: 0.8, baseDemand: 8975, growthRates: Array(9).fill(11.7), colorClass: "low-color", colorHex: "#8b5cf6", estimatedShare: Array(9).fill(16.0), criteria: { idealAge: 7.0, priceMin: 15.0, priceMax: 25.0, mtbfMin: 12000, mtbfMax: 17000, wp: 16, wa: 24, wpr: 53, wm: 7 } },
+        highEnd: { name: "High End", initX: 7.5, initY: 12.5, driftX: 0.9, driftY: -0.9, offsetX: 1.4, offsetY: -1.4, baseDemand: 2554, growthRates: Array(9).fill(16.2), colorClass: "high-color", colorHex: "#ec4899", estimatedShare: Array(9).fill(16.0), criteria: { idealAge: 0.0, priceMin: 30.0, priceMax: 40.0, mtbfMin: 23000, mtbfMax: 28000, wp: 43, wa: 29, wpr: 9, wm: 19 } },
+        performance: { name: "Performance", initX: 8.0, initY: 17.0, driftX: 1.0, driftY: -0.2, offsetX: 1.4, offsetY: -0.2, baseDemand: 1915, growthRates: Array(9).fill(19.8), colorClass: "perf-color", colorHex: "#f59e0b", estimatedShare: Array(9).fill(16.0), criteria: { idealAge: 1.0, priceMin: 25.0, priceMax: 35.0, mtbfMin: 22000, mtbfMax: 27000, wp: 29, wa: 9, wpr: 19, wm: 43 } },
+        size: { name: "Size", initX: 3.0, initY: 12.0, driftX: 0.4, driftY: -1.0, offsetX: 0.4, offsetY: -1.0, baseDemand: 1984, growthRates: Array(9).fill(18.3), colorClass: "size-color", colorHex: "#10b981", estimatedShare: Array(9).fill(16.0), criteria: { idealAge: 1.5, priceMin: 25.0, priceMax: 35.0, mtbfMin: 16000, mtbfMax: 21000, wp: 43, wa: 29, wpr: 9, wm: 19 } }
     };
     
     // UI Elements
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tabNavs.forEach(b => b.classList.remove('active'));
                 e.target.classList.add('active');
                 activeTab = e.target.getAttribute('data-tab');
-                if (tooltip) tooltip.style.opacity = '0'; // Hide ghost tooltips when switching tabs
+                if (tooltip) tooltip.style.display = 'none'; // Hide ghost tooltips when switching tabs
                 updateTabState();
             });
         });
@@ -338,11 +338,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="segment-criteria-header"><span class="color-ind" style="background:${seg.colorHex}; width:12px; height:12px; border-radius:50%;"></span> ${seg.name} Buying Criteria</div>
                 
                 <div class="input-group">
-                    <label>Industry Demand (Year 0)</label>
-                    <div class="row">
-                        <div class="input-wrapper"><span>Base</span><input type="number" step="1" id="bdem-${segId}" value="${seg.baseDemand || 0}"></div>
-                        <div class="input-wrapper"><span>Grow %</span><input type="number" step="0.1" id="grt-${segId}" value="${seg.growthRate || 0}"></div>
-                    </div>
+                    <label>Industry Base Demand (Year 0)</label>
+                    <input type="number" step="1" id="bdem-${segId}" value="${seg.baseDemand || 0}" class="full-width" style="padding: 4px; border: 1px solid var(--input-border); border-radius: 4px;">
                 </div>
 
                 <div class="input-group">
@@ -391,7 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const el = document.getElementById(`${idStr}-${segId}`);
                 if (el) el.oninput = e => { seg[key] = parseFloat(e.target.value)||0; updateProductsSVG(); if (activeTab === 'demand') renderDemandUI(); };
             };
-            bindSeg("baseDemand", "bdem"); bindSeg("growthRate", "grt");
+            bindSeg("baseDemand", "bdem");
         });
     }
 
@@ -412,11 +409,12 @@ document.addEventListener('DOMContentLoaded', () => {
         Object.keys(segments).forEach(segId => {
             const seg = segments[segId];
             if (!seg.estimatedShare) seg.estimatedShare = Array(9).fill(16.0); // Safe fallback
+            if (!seg.growthRates) seg.growthRates = Array(9).fill(seg.growthRate || 0); // Legacy catch
             
             // Sub-header row
             html += `<tr style="background: ${seg.colorHex}10;">
                 <td colspan="11" style="padding: 8px 12px; text-align: left; font-weight: 700; color: ${seg.colorHex}; border-bottom: 1px solid rgba(0,0,0,0.05);">
-                    ${seg.name} <span style="font-weight: 500; font-size: 0.75rem;">(+${seg.growthRate}%/yr)</span>
+                    ${seg.name} <span style="font-weight: 500; font-size: 0.75rem;">(Variable Growth)</span>
                 </td>
             </tr>`;
             
@@ -424,13 +422,27 @@ document.addEventListener('DOMContentLoaded', () => {
             html += `<tr><td style="padding: 8px 12px; text-align: left; color: var(--text-secondary);">Total Industry</td>`;
             let indDemands = [];
             let segmentTotalDemand = 0;
+            let currentDemand = seg.baseDemand || 0;
             for (let i = 0; i <= 8; i++) {
-                const dem = Math.round((seg.baseDemand || 0) * Math.pow(1 + (seg.growthRate || 0)/100, i));
-                indDemands.push(dem);
-                segmentTotalDemand += dem;
-                html += `<td style="padding: 8px 12px; border-bottom: 1px dashed rgba(0,0,0,0.05);">${dem.toLocaleString()}</td>`;
+                if (i > 0) currentDemand = Math.round(currentDemand * (1 + (seg.growthRates[i] || 0)/100));
+                indDemands.push(currentDemand);
+                segmentTotalDemand += currentDemand;
+                html += `<td style="padding: 8px 12px; border-bottom: 1px dashed rgba(0,0,0,0.05);">${currentDemand.toLocaleString()}</td>`;
             }
             html += `<td style="padding: 8px 12px; border-bottom: 1px dashed rgba(0,0,0,0.05); font-weight: 700; color: ${seg.colorHex}; background: rgba(0,0,0,0.02);">${segmentTotalDemand.toLocaleString()}</td></tr>`;
+            
+            // Row 1.5: Variable Growth Rates
+            html += `<tr><td style="padding: 8px 12px; text-align: left; color: var(--text-secondary);">Growth Rate (%)</td>`;
+            for (let i = 0; i <= 8; i++) {
+                if (i === 0) {
+                    html += `<td style="padding: 8px 12px; border-bottom: 1px dashed rgba(0,0,0,0.05); font-style: italic; color: #aaa;">-</td>`;
+                } else {
+                    html += `<td style="padding: 4px 8px; border-bottom: 1px dashed rgba(0,0,0,0.05);">
+                                <input type="number" step="0.1" class="grow-input" data-seg="${segId}" data-yr="${i}" value="${seg.growthRates[i]}" style="width: 100%; text-align: right; padding: 4px; border: 1px solid var(--input-border); border-radius: 4px; background: #fffcf0; font-family: monospace;">
+                            </td>`;
+                }
+            }
+            html += `<td style="padding: 8px 12px; border-bottom: 1px dashed rgba(0,0,0,0.05); background: rgba(0,0,0,0.02);"></td></tr>`;
             
             // Row 2: Est Share %
             html += `<tr><td style="padding: 8px 12px; text-align: left; color: var(--text-secondary);">Est. Share (%)</td>`;
@@ -460,6 +472,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const sid = e.target.getAttribute('data-seg');
                 const yr = parseInt(e.target.getAttribute('data-yr'));
                 segments[sid].estimatedShare[yr] = parseFloat(e.target.value) || 0;
+                renderDemandUI(); 
+            });
+        });
+        demandContainer.querySelectorAll('.grow-input').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const sid = e.target.getAttribute('data-seg');
+                const yr = parseInt(e.target.getAttribute('data-yr'));
+                segments[sid].growthRates[yr] = parseFloat(e.target.value) || 0;
                 renderDemandUI(); 
             });
         });
@@ -507,14 +527,16 @@ document.addEventListener('DOMContentLoaded', () => {
             cDot.addEventListener("mousemove", (e) => {
                 const {cx, cy} = getCalculatedCoords(segId, currentMonth);
                 const year = Math.floor(currentMonth / 12);
-                const demand = Math.round((segments[segId].baseDemand || 0) * Math.pow(1 + (segments[segId].growthRate || 0)/100, year));
+                let demand = segments[segId].baseDemand || 0;
+                for (let y = 1; y <= year; y++) demand = Math.round(demand * (1 + (parseFloat(segments[segId].growthRates[y]) || 0)/100));
                 showTooltip(e, `<b>${segments[segId].name} Center</b><br/><span class="coord-label">P:</span><span class="coord-value">${cx.toFixed(2)}</span> <span class="coord-label">S:</span><span class="coord-value">${cy.toFixed(2)}</span><br/><span class="coord-label">Yr ${year} Dmd:</span><span class="coord-value" style="color:#10b981;">${demand.toLocaleString()}</span>`);
             });
             cDot.addEventListener("mouseleave", hideTooltip);
             iDot.addEventListener("mousemove", (e) => {
                 const {ix, iy} = getCalculatedCoords(segId, currentMonth);
                 const year = Math.floor(currentMonth / 12);
-                const demand = Math.round((segments[segId].baseDemand || 0) * Math.pow(1 + (segments[segId].growthRate || 0)/100, year));
+                let demand = segments[segId].baseDemand || 0;
+                for (let y = 1; y <= year; y++) demand = Math.round(demand * (1 + (parseFloat(segments[segId].growthRates[y]) || 0)/100));
                 showTooltip(e, `<b>${segments[segId].name} Ideal</b><br/><span class="coord-label">P:</span><span class="coord-value">${ix.toFixed(2)}</span> <span class="coord-label">S:</span><span class="coord-value">${iy.toFixed(2)}</span><br/><span class="coord-label">Yr ${year} Dmd:</span><span class="coord-value" style="color:#10b981;">${demand.toLocaleString()}</span>`);
             });
             iDot.addEventListener("mouseleave", hideTooltip);
@@ -830,6 +852,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (segments[k]) {
                             // Merge strategically to guarantee backwards compatibility with older save files that lack demand fields
                             segments[k] = { ...segments[k], ...data.segments[k] };
+                            
+                            // Retroactively map old scalar 'growthRate' variables into length-9 arrays for legacy compatibility
+                            if (data.segments[k].growthRate !== undefined && !data.segments[k].growthRates) {
+                                segments[k].growthRates = Array(9).fill(data.segments[k].growthRate);
+                            }
                         }
                     });
                     
