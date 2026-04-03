@@ -254,17 +254,23 @@ document.addEventListener('DOMContentLoaded', () => {
             baseRow.className = 'input-group';
             baseRow.style.marginBottom = '0';
             baseRow.innerHTML = `
-                <label>Base Config (Round 0)</label>
+                <label>Base Config</label>
+                <div class="row" style="margin-bottom: 6px;">
+                    <div class="input-wrapper" style="flex:2;">
+                        <span>Intro Date</span><input type="month" value="${p.introDate || ''}" class="base-intro" title="Leave empty for round 0 existing products">
+                    </div>
+                </div>
                 <div class="row" style="margin-bottom: 6px;">
                     <div class="input-wrapper"><span>P</span><input type="number" step="0.1" value="${p.baseX}" class="base-p"></div>
                     <div class="input-wrapper"><span>S</span><input type="number" step="0.1" value="${p.baseY}" class="base-s"></div>
                 </div>
                 <div class="row">
                     <div class="input-wrapper"><span>Price</span><input type="number" step="0.1" value="${p.basePrice !== undefined ? p.basePrice : 28.0}" class="base-price"></div>
-                    <div class="input-wrapper"><span>Age</span><input type="number" step="0.1" value="${p.baseAge !== undefined ? p.baseAge : 2.0}" class="base-age"></div>
+                    <div class="input-wrapper"><span>Age</span><input type="number" step="0.1" value="${p.baseAge !== undefined ? p.baseAge : 2.0}" class="base-age" title="Ignored if a custom Intro Date exists!"></div>
                     <div class="input-wrapper"><span>MTBF</span><input type="number" step="100" value="${p.baseMTBF !== undefined ? p.baseMTBF : 17000}" class="base-mtbf"></div>
                 </div>
             `;
+            baseRow.querySelector('.base-intro').oninput = e => { p.introDate = e.target.value; updateProductsSVG(); updateMap(); };
             baseRow.querySelector('.base-p').oninput = e => { p.baseX = parseFloat(e.target.value)||0; updateProductsSVG(); };
             baseRow.querySelector('.base-s').oninput = e => { p.baseY = parseFloat(e.target.value)||0; updateProductsSVG(); };
             baseRow.querySelector('.base-price').oninput = e => { p.basePrice = parseFloat(e.target.value)||0; updateProductsSVG(); };
@@ -562,7 +568,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function getCalculatedProductState(p, targetMonth) {
-        let age = p.baseAge !== undefined ? p.baseAge : 2.0;
+        let introMonth = p.introDate ? getMonthOffsetFromStart(p.introDate) : 0;
+        
+        if (targetMonth < introMonth) {
+            return null; // Product has not launched yet
+        }
+        
+        let age = p.introDate ? 0 : (p.baseAge !== undefined ? p.baseAge : 2.0);
         let pX = p.baseX;
         let pY = p.baseY;
         let mtbf = p.baseMTBF !== undefined ? p.baseMTBF : 17000;
@@ -573,7 +585,17 @@ document.addEventListener('DOMContentLoaded', () => {
             revMap[getMonthOffsetFromStart(r.dateStr)] = r;
         });
 
-        for (let m = 1; m <= targetMonth; m++) {
+        // Edge case if a revision exists strictly on the intro month
+        if (revMap[introMonth]) {
+            const r = revMap[introMonth];
+            const changedPS = (r.x !== pX || r.y !== pY);
+            if(changedPS) age = age / 2.0;
+            pX = r.x; pY = r.y; 
+            if (r.mtbf !== undefined) mtbf = r.mtbf;
+            if (r.price !== undefined) price = r.price;
+        }
+
+        for (let m = introMonth + 1; m <= targetMonth; m++) {
             age += 1.0 / 12.0;
             if (revMap[m]) {
                 const r = revMap[m];
@@ -583,16 +605,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (r.mtbf !== undefined) mtbf = r.mtbf;
                 if (r.price !== undefined) price = r.price;
             }
-        }
-        
-        // Month 0 revision edge case
-        if (targetMonth === 0 && revMap[0]) {
-            const r = revMap[0];
-            const changedPS = (r.x !== pX || r.y !== pY);
-            if(changedPS) age = age / 2.0;
-            pX = r.x; pY = r.y; 
-            if (r.mtbf !== undefined) mtbf = r.mtbf;
-            if (r.price !== undefined) price = r.price;
         }
 
         return { x: pX, y: pY, age: age, mtbf: mtbf, price: price };
@@ -641,6 +653,8 @@ document.addEventListener('DOMContentLoaded', () => {
         Object.values(productElements).forEach(el => el.remove()); productElements = {};
         products.forEach(p => {
             const state = getCalculatedProductState(p, currentMonth);
+            
+            if (!state) return; // Hide dynamically unreleased products
 
             let poly = document.createElementNS(SVG_NS, "polygon");
             poly.setAttribute("class", "svg-polygon product-triangle");
