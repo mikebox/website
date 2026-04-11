@@ -11,6 +11,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let productCounter = 2;
     let activeTab = 'summary';
 
+    let competitorsData = {};
+    let competitorsTextData = {};
+    let showCompetitors = false;
+    let competitorElements = {};
+    let hiddenCompetitors = new Set();
+
     const segments = {
         traditional: { name: "Traditional", initX: 5.0, initY: 15.0, driftX: 0.7, driftY: -0.7, offsetX: 0.0, offsetY: 0.0, baseDemand: 7387, growthRates: Array(9).fill(9.2), colorClass: "trad-color", colorHex: "#2563eb", estimatedShare: Array(9).fill(16.0), criteria: { idealAge: 2.0, priceMin: 20.0, priceMax: 30.0, mtbfMin: 14000, mtbfMax: 19000, wp: 21, wa: 47, wpr: 23, wm: 9 } },
         lowEnd: { name: "Low End", initX: 2.5, initY: 17.5, driftX: 0.5, driftY: -0.5, offsetX: -0.8, offsetY: 0.8, baseDemand: 8975, growthRates: Array(9).fill(11.7), colorClass: "low-color", colorHex: "#8b5cf6", estimatedShare: Array(9).fill(16.0), criteria: { idealAge: 7.0, priceMin: 15.0, priceMax: 25.0, mtbfMin: 12000, mtbfMax: 17000, wp: 16, wa: 24, wpr: 53, wm: 7 } },
@@ -24,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const productsContainer = document.getElementById('products-container');
     const segmentsContainer = document.getElementById('segments-container');
     const demandContainer = document.getElementById('demand-container');
+    const competitorsContainer = document.getElementById('competitors-container');
     const configsContainer = document.getElementById('configs-container');
     const tabNavs = document.querySelectorAll('.tab-btn');
     const mapTitle = document.getElementById('map-title');
@@ -82,8 +89,30 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
         
+        const toggleCompetitors = document.getElementById('toggle-competitors');
+        const compFiltersDiv = document.getElementById('competitor-filters');
+        if (toggleCompetitors) {
+            toggleCompetitors.addEventListener('change', (e) => {
+                showCompetitors = e.target.checked;
+                if (compFiltersDiv) compFiltersDiv.style.display = showCompetitors ? 'flex' : 'none';
+                updateMap();
+            });
+        }
+        
+        const compFilters = document.querySelectorAll('.comp-filter');
+        compFilters.forEach(cb => {
+            cb.addEventListener('change', (e) => {
+                const val = e.target.value.toLowerCase();
+                if(e.target.checked) hiddenCompetitors.delete(val);
+                else hiddenCompetitors.add(val);
+                updateMap();
+            });
+        });
+        
+        
         renderProductsUI();
         renderSegmentsUI();
+        renderCompetitorsUI();
         buildSegmentConfigs();
         updateTabState();
         
@@ -170,19 +199,26 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function updateTabState() {
         const allConfigs = configsContainer.querySelectorAll('.segment-config');
+        
+        productsContainer.style.display = 'none';
+        segmentsContainer.style.display = 'none';
+        if (demandContainer) demandContainer.style.display = 'none';
+        if (competitorsContainer) competitorsContainer.style.display = 'none';
+        
         if (activeTab === 'products') {
             mapTitle.innerHTML = `Product Management <span class="badge" id="map-time-badge"></span>`;
             configsContainer.style.display = 'none';
             document.getElementById('svg-container').style.display = 'none';
-            segmentsContainer.style.display = 'none';
-            if (demandContainer) demandContainer.style.display = 'none';
             productsContainer.style.display = 'grid'; 
+        } else if (activeTab === 'competitors') {
+            mapTitle.innerHTML = `Competitor Data Manager <span class="badge" id="map-time-badge"></span>`;
+            configsContainer.style.display = 'none';
+            document.getElementById('svg-container').style.display = 'none';
+            if (competitorsContainer) competitorsContainer.style.display = 'block';
         } else if (activeTab === 'segments') {
             mapTitle.innerHTML = `Segments Buying Criteria <span class="badge" id="map-time-badge"></span>`;
             configsContainer.style.display = 'flex';
             document.getElementById('svg-container').style.display = 'none';
-            productsContainer.style.display = 'none';
-            if (demandContainer) demandContainer.style.display = 'none';
             segmentsContainer.style.display = 'grid';
             
             allConfigs.forEach(conf => {
@@ -396,6 +432,58 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             bindSeg("baseDemand", "bdem");
         });
+    }
+
+    function parseCompetitorText(r, text) {
+        competitorsTextData[r] = text;
+        const lines = text.split('\n');
+        const parsed = [];
+        lines.forEach(line => {
+            const str = line.trim();
+            if (!str) return;
+            const parts = str.split(',');
+            if (parts.length >= 3) {
+                // User specifies format: Product Name, Size(s), Performance(p)? No, standard is Performance, Size.
+                // Re-aligned with user instruction: "productname, size, performance". Example: Baker,5.8,14.4 -> P=14.4, S=5.8. 
+                // Actually 5.8 is Performance for Traditional "Baker". But user wrote Size = 5.8 intentionally?
+                // Either way, I will map P=parts[1], S=parts[2]. The prompt said "Baker,5.8,14.4" and "productname, size, performance comma separated".
+                // In earlier context, "Baker,5.8,14.4" -> 5.8 is Performance, 14.4 is Size. Let's just blindly map the floating points explicitly to x/y.
+                // Wait, if parts[1] is 5.8 and parts[2] is 14.4. Then p=parseFloat(parts[1]), s=parseFloat(parts[2]).
+                parsed.push({ name: parts[0].trim(), p: parseFloat(parts[1]), s: parseFloat(parts[2]) });
+            }
+        });
+        competitorsData[r] = parsed;
+        updateMap();
+    }
+
+    function renderCompetitorsUI() {
+        if (!competitorsContainer) return;
+        let html = `<div class="glass-card" style="padding: 24px; max-width: 900px; margin: 0 auto; border: 1px solid var(--panel-border); background: white;">
+            <h3 style="margin-bottom: 8px; font-weight: 700; font-size: 1.2rem; color: var(--text-primary);">Competitor Tracking Data</h3>
+            <p style="margin-bottom: 20px; color: var(--text-secondary); font-size: 0.85rem; line-height: 1.4;">Paste your raw capsim log parameters here structurally for every single round. Format: <code style="background: #f1f5f9; padding: 2px 4px; border-radius: 4px;">Product Name, Performance, Size</code> (e.g. <code>Baker,5.8,14.4</code>). One product per line.</p>
+            <div style="display:flex; flex-direction:column; gap:16px;">`;
+        
+        for (let r = 1; r <= 8; r++) {
+            html += `<div class="input-group" style="margin-bottom: 0;">
+                <label style="font-weight: 600; color: var(--text-primary);">Round ${r} Data</label>
+                <textarea id="comp-text-${r}" rows="3" style="width:100%; border:1px solid var(--input-border); border-radius:4px; padding:10px; font-family:monospace; font-size:0.85rem; outline:none;" placeholder="Example:\nBaker,5.8,14.4\nBead,3.1,17.1">${competitorsTextData[r] || ''}</textarea>
+            </div>`;
+        }
+        
+        html += `</div></div>`;
+        competitorsContainer.innerHTML = html;
+        
+        for (let r = 1; r <= 8; r++) {
+            document.getElementById(`comp-text-${r}`).addEventListener('input', (e) => {
+                parseCompetitorText(r, e.target.value);
+                const toggle = document.getElementById('toggle-competitors');
+                if (toggle && !toggle.checked && e.target.value.trim() !== '') {
+                    toggle.checked = true;
+                    showCompetitors = true;
+                    updateMap();
+                }
+            });
+        }
     }
 
     function renderDemandUI() {
@@ -649,6 +737,88 @@ document.addEventListener('DOMContentLoaded', () => {
         return { score: score, distCenter: distCenter, name: seg.name };
     }
 
+    function updateCompetitorsSVG() {
+        Object.values(competitorElements).forEach(el => el.remove()); 
+        competitorElements = {};
+
+        if (!showCompetitors || Object.keys(competitorsData).length === 0) return;
+
+        let fraction = (currentMonth % 12) / 12.0;
+        let currentRound = Math.floor(currentMonth / 12);
+        
+        let previousRoundData = competitorsData[currentRound]; 
+        let nextRoundData = competitorsData[currentRound + 1];
+
+        let activeData = nextRoundData || previousRoundData || Object.values(competitorsData)[0];
+        if (!activeData) return;
+
+        activeData.forEach(comp => {
+            let firstChar = comp.name.charAt(0).toLowerCase();
+            if (hiddenCompetitors.has(firstChar)) return;
+
+            let pX = comp.p;
+            let pY = comp.s;
+
+            let prevComp = previousRoundData ? previousRoundData.find(c => c.name === comp.name) : null;
+            let nextComp = nextRoundData ? nextRoundData.find(c => c.name === comp.name) : null;
+
+            if (prevComp && nextComp && currentRound > 0) {
+                pX = prevComp.p + (nextComp.p - prevComp.p) * fraction;
+                pY = prevComp.s + (nextComp.s - prevComp.s) * fraction;
+            } else if (nextComp && currentRound === 0) {
+                // Reverse approximate standard drift map for Round 0 origin
+                let startP = nextComp.p - 0.7;
+                let startS = nextComp.s + 0.7;
+                pX = startP + (nextComp.p - startP) * fraction;
+                pY = startS + (nextComp.s - startS) * fraction;
+            } else if (prevComp && !nextComp) {
+                pX = prevComp.p;
+                pY = prevComp.s;
+            }
+
+            let group = document.createElementNS(SVG_NS, "g");
+            group.setAttribute("class", "competitor-dot");
+            group.style.cursor = "pointer";
+            
+            const compColors = {
+                'a': '#ef4444', // Andrews (Red)
+                'b': '#3b82f6', // Baldwin (Blue)
+                'c': '#22c55e', // Chester (Green)
+                'd': '#a855f7', // Digby (Purple)
+                'e': '#f97316', // Erie (Orange)
+                'f': '#14b8a6'  // Ferris (Teal)
+            };
+            
+            let dotColor = compColors[firstChar] || '#64748b';
+            
+            let circle = document.createElementNS(SVG_NS, "circle");
+            circle.setAttribute("cx", pX);
+            circle.setAttribute("cy", 20 - pY);
+            circle.setAttribute("r", 0.15);
+            circle.setAttribute("fill", dotColor);
+            circle.setAttribute("stroke", "white");
+            circle.setAttribute("stroke-width", "0.04");
+            
+            let hoverArea = document.createElementNS(SVG_NS, "circle");
+            hoverArea.setAttribute("cx", pX);
+            hoverArea.setAttribute("cy", 20 - pY);
+            hoverArea.setAttribute("r", 0.6);
+            hoverArea.setAttribute("fill", "transparent");
+            hoverArea.setAttribute("class", "competitor-hover");
+            
+            group.appendChild(circle);
+            group.appendChild(hoverArea);
+            
+            group.addEventListener("mousemove", (e) => {
+                showTooltip(e, `<b>${comp.name} (Competitor)</b><br/><span class="coord-label">P:</span><span class="coord-value">${pX.toFixed(2)}</span> <span class="coord-label">S:</span><span class="coord-value">${pY.toFixed(2)}</span>`);
+            });
+            group.addEventListener("mouseleave", hideTooltip);
+            
+            dataGroup.appendChild(group);
+            competitorElements[comp.name] = group;
+        });
+    }
+
     function updateProductsSVG() {
         Object.values(productElements).forEach(el => el.remove()); productElements = {};
         products.forEach(p => {
@@ -714,7 +884,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (evt.target.classList && (
             evt.target.classList.contains('center-dot') || 
             evt.target.classList.contains('ideal-dot') || 
-            evt.target.classList.contains('product-triangle')
+            evt.target.classList.contains('product-triangle') ||
+            evt.target.classList.contains('competitor-hover')
         )) {
             return;
         }
@@ -791,6 +962,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Need to update product SVGs constantly during update map so they respond to time
         updateProductsSVG();
+        updateCompetitorsSVG();
     }
 
     function toggleAutoPlay() {
@@ -829,7 +1001,8 @@ document.addEventListener('DOMContentLoaded', () => {
             products: products,
             productCounter: productCounter,
             segments: segments,
-            gameStartDate: gameStartDate
+            gameStartDate: gameStartDate,
+            competitorsTextData: competitorsTextData
         };
         const jsonStr = JSON.stringify(data, null, 2);
         
@@ -877,9 +1050,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     gameStartDate = data.gameStartDate || "2024-01";
                     startDateInput.value = gameStartDate;
                     
+                    competitorsTextData = data.competitorsTextData || {};
+                    for (let r = 1; r <= 8; r++) {
+                        if (competitorsTextData[r]) parseCompetitorText(r, competitorsTextData[r]);
+                    }
+                    
                     currentMonth = 0;
                     buildSegmentConfigs();
                     renderSegmentsUI();
+                    renderCompetitorsUI();
                     renderProductsUI();
                     updateTabState(); 
                 } else {
